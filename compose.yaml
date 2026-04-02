@@ -1,0 +1,45 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: mural-db
+    restart: always
+    environment:
+      POSTGRES_DB: muraldb
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: root
+    volumes:
+      - mural-db-dados:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+
+  api:
+    build: ./backend
+    container_name: mural-backend
+    restart: always
+    environment:
+      DB_HOST: db
+      DB_NAME: muraldb
+      DB_USER: admin
+      DB_PASSWORD: root
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+
+  web:
+    build:
+      context: ./frontend
+      args:
+        REACT_APP_API_URL: http://localhost:5000
+    container_name: mural-frontend
+    restart: always
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+
+volumes:
+  mural-db-dados:
